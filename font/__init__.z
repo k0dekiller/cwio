@@ -1,6 +1,8 @@
 use * from .font
-use Font as vcr_osd_mono from .vcr_osd_mono
+use Font    as miniwi       from .miniwi
+use Font    as vcr_osd_mono from .vcr_osd_mono
 
 all = [
+    miniwi,
     vcr_osd_mono,
 ]
