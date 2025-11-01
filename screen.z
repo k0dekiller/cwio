@@ -1,0 +1,91 @@
+use .calc
+use * from .const
+use Font from .font
+use utime
+
+delta = [,]
+
+def on: None
+    calc.write(SCR.POWER, SCR.ENUM.POWER.RESET)
+    utime.sleep_ms(1)
+    calc.write(SCR.POWER, SCR.ENUM.POWER.ON)
+    utime.sleep_ms(1)
+.
+
+def init: None
+    calc.write(SCR.MODE, SCR.ENUM.MODE.BUFFER | SCR.ENUM.MODE.ALL | SCR.ENUM.MODE.FLIP_X | 0b100_0000)
+    calc.write(SCR.CONTRAST, 0x13)
+.
+
+def clear_raw: None
+    for pl -> [SCR.ENUM.SELECT.PLANE0, SCR.ENUM.SELECT.PLANE1,]
+        calc.write(SCR.SELECT, pl)
+        for y -> {->SCR.HEIGHT+SCR.HEADER}
+            for x -> {->SCR.WIDTH//8}
+                calc.write(SCR.BUFFER + y * 32 + x, 0x00)
+            .
+        .
+    .
+.
+
+def apply: None
+    global delta
+    rdelta = [,]
+    for d -> delta
+        x, y, v = d
+        rx = x // 8
+        ox = x % 8
+        p = (1 << (7 - ox))
+        v0 = v & SCR.ENUM.PIXEL.BRIGHT
+        v1 = (v & SCR.ENUM.PIXEL.DARK) >> 1
+        for rd -> rdelta
+            if rx == rd[0] // 8 and y == rd[1]
+                for pl at pi -> [v0, v1]
+                    if pl; rd[2+pi] |= p;
+                    .else; rd[2+pi] &= ~p;
+                    .
+                .
+                break
+            .
+        .else
+            {rdelta}<-[
+                x,
+                y,
+                (p if v0 else 0),
+                (p if v1 else 0),
+            ]
+        .
+    .
+    for rd -> rdelta
+        x, y, p0, p1 = rd
+        rx = x // 8
+        ox = x % 8
+        ry = y * SCR.TRUE_WIDTH // 8
+        r = SCR.ENUM.BUFFER.SCREEN + ry + rx
+        calc.write(SCR.SELECT, SCR.ENUM.SELECT.PLANE0)
+        calc.write(r, p0)
+        calc.write(SCR.SELECT, SCR.ENUM.SELECT.PLANE1)
+        calc.write(r, p1)
+    .
+    delta = [,]
+.
+
+def set(x: int, y: int, v: int): None
+    {delta}<-[x, y, v,]
+.
+
+def write_char(x: int, y: int, c: str, v: int, font: Font): None
+    f = font!
+    char = getattr(f, "c"..(c as ord as hex as str)[2:], None)
+    if not char; <-;.
+    wb = f.w // 8 + (1 if f.w % 8 else 0)
+    for py -> {->f.h}
+        for px -> {->f.w}
+            bx = px // 8
+            ox = px % 8
+            if char[py * wb + bx] & (0b1 << (7 - ox))
+                set(x + px, y + py, v)
+            .
+        .
+    .
+.

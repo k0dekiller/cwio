@@ -1,0 +1,6 @@
+use * from .font
+use Font as vcr_osd_mono from .vcr_osd_mono
+
+all = [
+    vcr_osd_mono,
+]
