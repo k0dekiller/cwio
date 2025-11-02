@@ -77,8 +77,8 @@ class KEYBOARD
         BACK    = 0b001_110
         HOME    = 0b001_111
         N3      = 0b010_000
-        N5      = 0b010_001
-        N8      = 0b010_010
+        N6      = 0b010_001
+        N9      = 0b010_010
         COS     = 0b010_011
         SQRT    = 0b010_100
         FUNCTION= 0b010_101
