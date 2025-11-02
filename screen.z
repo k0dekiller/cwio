@@ -128,24 +128,27 @@ def rect(x: int, y: int, w: int, h: int, v: int)
     .
 .
 
-def write_char(c: str, x: int, y: int, v: int, font: Font): None
-    f = font!
-    char = getattr(f, "c"..(c as ord as hex as str)[2:].upper!, None)
-    if not char; <-;.
+class Image
+    /* @w: int, @h: int, @data: bytes;;.
+.
+
+class MonoImage from Image;;.
+
+def image(img: MonoImage, x: int, y: int, v: int): None
     === start of previous x byte
     xb = x//8
     === actual row size in bytes
-    wb = ((f.w+7)&~7)//8
-    for py -> {->f.h}
+    wb = ((img.w+7)&~7)//8
+    for py -> {->img.h}
         for bx -> {->wb}
             === x offset from last byte
             ox = x % 8
             === current byte's address in font data
             r = py * wb + bx
             === previous, current and next bytes in row
-            prevb = (0x00 if bx == 0 else char[r-1])
-            currb = char[r]
-            nextb = (0x00 if bx == wb-1 else char[r+1])
+            prevb = (0x00 if bx == 0 else img.data[r-1])
+            currb = img.data[r]
+            nextb = (0x00 if bx == wb-1 else img.data[r+1])
             === generate brush by merging all 3 bytes next to each other
             brush = (prevb << 16) | (currb << 8) | nextb
             === get the byte that gets drawn on screen
@@ -162,6 +165,13 @@ def write_char(c: str, x: int, y: int, v: int, font: Font): None
             .
         .
     .
+.
+
+def write_char(c: str, x: int, y: int, v: int, font: Font): None
+    f = font!
+    char = getattr(f, "c"..(c as ord as hex as str)[2:].upper!, None)
+    if not char; <-;.
+    image(MonoImage(f.w, f.h, char), x, y, v)
 .
 
 def write(s: str, x: int, y: int, v: int, font: Font): None
