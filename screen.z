@@ -132,21 +132,33 @@ def write_char(c: str, x: int, y: int, v: int, font: Font): None
     f = font!
     char = getattr(f, "c"..(c as ord as hex as str)[2:].upper!, None)
     if not char; <-;.
-    wb = f.w // 8 + (1 if f.w % 8 else 0)
+    === start of previous x byte
+    xb = x//8
+    === actual row size in bytes
+    wb = ((f.w+7)&~7)//8
     for py -> {->f.h}
-        for px -> {->wb}
+        for bx -> {->wb}
+            === x offset from last byte
             ox = x % 8
-            r = py * wb + px
-            prevb = (0x00 if px ==    0 else char[r - 1])
+            === current byte's address in font data
+            r = py * wb + bx
+            === previous, current and next bytes in row
+            prevb = (0x00 if bx == 0 else char[r-1])
             currb = char[r]
-            nextb = (0x00 if px == wb-1 else char[r + 1])
-            === shift the 3 values by the x offset relative to last byte boundary
-            brush = ((prevb << 16) | (currb << 8) | nextb)
-            paint_group(x + px * 8, y + py, 0, brush >> (8 + ox), True)
-            paint_group(x + px * 8, y + py, 1, brush >> (8 + ox), True)
-            if px == wb-1 and ox > f.w
-                paint_group(x + (px+1) * 8, y + py, 0, brush >> (8 - ox + f.w), True)
-                paint_group(x + (px+1) * 8, y + py, 1, brush >> (8 - ox + f.w), True)
+            nextb = (0x00 if bx == wb-1 else char[r+1])
+            === generate brush by merging all 3 bytes next to each other
+            brush = (prevb << 16) | (currb << 8) | nextb
+            === get the byte that gets drawn on screen
+            === by offsetting the brush by the x offset
+            byte = brush >> (8 + ox)
+            === draw the byte on the screen
+            paint_group(x + bx * 8, y + py, 0, byte, True)
+            paint_group(x + bx * 8, y + py, 1, byte, True)
+            === is the brush being cut?
+            byte = brush >> ox
+            if byte;
+                paint_group(x + (bx+1) * 8, y + py, 0, byte, True)
+                paint_group(x + (bx+1) * 8, y + py, 1, byte, True)
             .
         .
     .
