@@ -23,7 +23,7 @@ def wait_for(code: int): None
 .
 
 def wait: None
-    while not pressed_any;;.
+    while not pressed_any!;;.
 .
 
 def get_next: int
