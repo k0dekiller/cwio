@@ -3,75 +3,129 @@ use * from .const
 use Font from .font
 use utime
 
-delta = [,]
-
 def on: None
     calc.write(SCR.POWER, SCR.ENUM.POWER.RESET)
-    utime.sleep_ms(1)
+    utime.sleep_ms(2)
     calc.write(SCR.POWER, SCR.ENUM.POWER.ON)
-    utime.sleep_ms(1)
+    utime.sleep_ms(2)
 .
 
 def init: None
     calc.write(SCR.MODE, SCR.ENUM.MODE.BUFFER | SCR.ENUM.MODE.ALL | SCR.ENUM.MODE.FLIP_X | SCR.ENUM.MODE.COLOR)
     calc.write(SCR.CONTRAST, 0x13)
+    utime.sleep_ms(2)
 .
 
-def clear_raw: None
-    for pl -> [SCR.ENUM.SELECT.PLANE0, SCR.ENUM.SELECT.PLANE1,]
-        calc.write(SCR.SELECT, pl)
-        for y -> {->SCR.HEIGHT+SCR.HEADER}
-            for x -> {->SCR.WIDTH//8}
-                calc.write(SCR.BUFFER + y * 32 + x, 0x00)
-            .
-        .
+empty = [
+    (b"\x00" * (SCR.SIZE-SCR.HEADER*SCR.WIDTH_B)) as bytearray,
+    (b"\x00" * (SCR.SIZE-SCR.HEADER*SCR.WIDTH_B)) as bytearray,
+]
+oldbuf = None
+buf = [empty[0][0:], empty[1][0:],]
+
+def clear
+    for i -> {->SCR.SIZE-SCR.HEADER*SCR.WIDTH_B}
+        buf[0][i] = 0x00
+        buf[1][i] = 0x00
     .
 .
 
-def apply: None
-    global delta
-    rdelta = [,]
-    for d -> delta
-        x, y, v = d
-        rx = x // 8
-        ox = x % 8
-        p = (1 << (7 - ox))
-        v0 = v & SCR.ENUM.PIXEL.BRIGHT
-        v1 = (v & SCR.ENUM.PIXEL.DARK) >> 1
-        for rd -> rdelta
-            if rx == rd[0] // 8 and y == rd[1]
-                for pl at pi -> [v0, v1]
-                    if pl; rd[2+pi] |= p;
-                    .else; rd[2+pi] &= ~p;
-                    .
-                .
-                break
-            .
-        .else
-            {rdelta}<-[
-                x,
-                y,
-                (p if v0 else 0),
-                (p if v1 else 0),
-            ]
-        .
+def get_group(x: int, y: int, pl: int)
+    <-buf[pl][y * SCR.WIDTH_B + x // 8]
+.
+
+def set_group(x: int, y: int, pl: int, v: int)
+    buf[pl][y * SCR.WIDTH_B + x // 8] = v
+.
+
+def paint_group(x: int, y: int, pl: int, b: int, m: bool)
+    i = y * SCR.WIDTH_B + x // 8
+    if m;  buf[pl][i] |= b
+    .else; buf[pl][i] &=~b
     .
-    for rd -> rdelta
-        x, y, p0, p1 = rd
-        rx = x // 8
-        ox = x % 8
-        ry = y * SCR.TRUE_WIDTH // 8
-        r = SCR.ENUM.BUFFER.SCREEN + ry + rx
-        calc.write(SCR.SELECT, SCR.ENUM.SELECT.PLANE0)
-        calc.write(r, p0)
-        calc.write(SCR.SELECT, SCR.ENUM.SELECT.PLANE1)
-        calc.write(r, p1)
-    .
-    delta = [,]
+.
+
+def set_raw(x: int, y: int, pl: int, v: bool)
+    ox = x % 8
+    paint_group(x, y, pl, 1 << (7 - ox), v)
 .
 
 def set(x: int, y: int, v: int): None
-    {delta}<-[x, y, v,]
+    set_raw(x, y, 0, v & SCR.ENUM.PIXEL.BRIGHT)
+    set_raw(x, y, 1, v & SCR.ENUM.PIXEL.DARK)
+.
+
+def set_byte(x: int, y: int, v: int): None
+    set_group(x, y, 0, (v & SCR.ENUM.PIXEL.BRIGHT) * 0xFF)
+    set_group(x, y, 1, ((v & SCR.ENUM.PIXEL.DARK) >> 1) * 0xFF)
+.
+
+def apply: None
+    global oldbuf
+    global buf
+    for rp at p -> [SCR.ENUM.SELECT.PLANE0, SCR.ENUM.SELECT.PLANE1,]
+        calc.write(SCR.SELECT, rp)
+        for y -> {->SCR.HEIGHT}
+            for x -> {->SCR.WIDTH_B}
+                i = y * SCR.WIDTH_B + x
+                if (not oldbuf) or (oldbuf[p][i] != buf[p][i])
+                    calc.write(
+                        SCR.BUFFER + (y+1) * SCR.TRUE_WIDTH_B + x,
+                        buf[p][i]
+                    )
+                .
+            .
+        .
+    .
+    oldbuf = [
+        buf[0][0:],
+        buf[1][0:],
+    ]
+.
+
+def line_h(x: int, y: int, l: int, v: int)
+    s = 0
+    rx = x
+    rl = x+l
+    while rx < rl
+        if s == 0
+            if rx % 8
+                set(rx, y, v)
+                rx += 1
+            .else
+                s = 1
+            .
+        .elif s == 1
+            if rl-rx >= 8
+                set_byte(rx, y, v)
+                rx += 8
+            .else
+                s = 2
+            .
+        .else
+            set(rx, y, v)
+            rx += 1
+        .
+    .
+.
+
+def line_v(x: int, y: int, l: int, v: int)
+    for oy -> {->l}
+        set(x, y+oy, v)
+    .
+.
+
+def box(x: int, y: int, w: int, h: int, v: int)
+    line_h(x, y, w, v)
+    line_h(x, y+h-1, w, v)
+    line_v(x, y+1, h-2, v)
+    line_v(x+w-1, y+1, h-2, v)
+.
+
+def rect(x: int, y: int, w: int, h: int, v: int)
+    for oy -> {->h}
+        line_h(x, y+oy, w, v)
+    .
 .
 
 def write_char(c: str, x: int, y: int, v: int, font: Font): None
@@ -80,11 +134,19 @@ def write_char(c: str, x: int, y: int, v: int, font: Font): None
     if not char; <-;.
     wb = f.w // 8 + (1 if f.w % 8 else 0)
     for py -> {->f.h}
-        for px -> {->f.w}
-            bx = px // 8
-            ox = px % 8
-            if char[py * wb + bx] & (0b1 << (7 - ox))
-                set(x + px, y + py, v)
+        for px -> {->wb}
+            ox = x % 8
+            r = py * wb + px
+            prevb = (0x00 if px ==    0 else char[r - 1])
+            currb = char[r]
+            nextb = (0x00 if px == wb-1 else char[r + 1])
+            === shift the 3 values by the x offset relative to last byte boundary
+            brush = ((prevb << 16) | (currb << 8) | nextb)
+            paint_group(x + px * 8, y + py, 0, brush >> (8 + ox), True)
+            paint_group(x + px * 8, y + py, 1, brush >> (8 + ox), True)
+            if px == wb-1 and ox > f.w
+                paint_group(x + (px+1) * 8, y + py, 0, brush >> (8 - ox + f.w), True)
+                paint_group(x + (px+1) * 8, y + py, 1, brush >> (8 - ox + f.w), True)
             .
         .
     .
