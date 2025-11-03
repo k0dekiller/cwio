@@ -26,6 +26,13 @@ def wait: None
     while not pressed_any!;;.
 .
 
+def get: int
+    for key -> [0b000_000<->0b111_111]
+        if pressed(key); <-key;.
+    .
+    <- -1
+.
+
 def get_next: int
     wait!
     for key -> [0b000_000<->0b111_111]
