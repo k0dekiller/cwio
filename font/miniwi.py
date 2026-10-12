@@ -1,7 +1,11 @@
-use .font
+from . import font
 
-class Font from font.MonoFont
-    /*; @^(name="Miniwi", w=4, h=8);.
+class Font(font.MonoFont):
+    def __init__(self) -> None:
+        super().__init__(
+            name="Miniwi",
+            w=4, h=8
+        )
 
     c21 = bytes([
         0b0000_0000,
@@ -154,7 +158,7 @@ class Font from font.MonoFont
         0b0000_0000,
     ])
 
-    === 0
+    # 0
     c30 = bytes([
         0b0000_0000,
         0b1110_0000,
@@ -328,7 +332,7 @@ class Font from font.MonoFont
         0b0000_0000,
     ])
 
-    === A
+    # A
     c41 = bytes([
         0b0000_0000,
         0b1110_0000,
@@ -652,7 +656,7 @@ class Font from font.MonoFont
         0b0000_0000,
     ])
 
-    === a
+    # a
     c61 = bytes([
         0b0000_0000,
         0b0000_0000,
@@ -955,4 +959,3 @@ class Font from font.MonoFont
         0b0000_0000,
         0b0000_0000,
     ])
-.

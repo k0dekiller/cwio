@@ -1,6 +1,6 @@
-class SCR
-    class ENUM
-        class MODE
+class SCR:
+    class ENUM:
+        class MODE:
             NONE    = 0b000_0000
             ALL     = 0b000_0001
             HEADER  = 0b000_0010
@@ -8,32 +8,25 @@ class SCR
             FLIP_X  = 0b001_0000
             FLIP_Y  = 0b010_0000
             COLOR   = 0b100_0000
-        .
-        class CONTRAST
+        class CONTRAST:
             MIN     = 0x00
             MAX     = 0x1F
-        .
-        class SELECT
+        class SELECT:
             PLANE0  = 0b000
             PLANE1  = 0b100
-        .
-        class POWER
+        class POWER:
             OFF     = 0b000
             ON      = 0b001
             RESET   = 0b010
-        .
-        class BUFFER
+        class BUFFER:
             SHIFT   = 0xF801
             SCREEN  = 0xF820
-        .
-    .
-    class COLOR
+    class COLOR:
         WHITE   = 0b00
         BRIGHT  = 0b01
         DARK    = 0b10
         BLACK   = 0b11
-    .
-    class ICON
+    class ICON:
         SHIFT   = 0x01
         MATHIO  = 0x03
         DEG     = 0x04
@@ -52,7 +45,6 @@ class SCR
         RIGHT   = 0x13
         PAUSE   = 0x15
         POWER   = 0x16
-    .
     RANGE       = 0xF030
     MODE        = 0xF031
     CONTRAST    = 0xF032
@@ -64,8 +56,8 @@ class SCR
     OFFSET      = 0xF039
     SCAN        = 0xF03B
     POWER       = 0xF03D
-    ===         = 0xF03E UNKNOWN
-    ===         = 0xF03F UNKNOWN
+    #           = 0xF03E UNKNOWN
+    #           = 0xF03F UNKNOWN
     BUFFER      = 0xF800
     SIZE        = 0x600
     TRUE_SIZE   = 0x800
@@ -77,10 +69,9 @@ class SCR
     TRUE_WIDTH  = 256
     TRUE_WIDTH_B= 32
     TRUE_HEIGHT = 64
-.
 
-class KB
-    class KEY
+class KB:
+    class KEY:
         N1      = 0b000_000
         N4      = 0b000_001
         N7      = 0b000_010
@@ -128,12 +119,10 @@ class KB
         POWER_10= 0b110_010
         DOT     = 0b110_011
         N0      = 0b110_100
-    .
     IN          = 0xF040
     IN_PULL_UP  = 0xF041
     IN_MASK     = 0xF042
-    ===         = 0xF043 only LSB of 0xF044 are used, so this is useless
+    #           = 0xF043 only LSB of 0xF044 are used, so this is useless
     OUT_MASK    = 0xF044
-    ===         = 0xF045 only LSB of 0xF046 are used, so this is useless
+    #           = 0xF045 only LSB of 0xF046 are used, so this is useless
     OUT         = 0xF046
-.

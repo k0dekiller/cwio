@@ -1,7 +1,11 @@
-use .font
+from . import font
 
-class Font from font.MonoFont
-    /*; @^(name="ClassWiz CW", w=11, h=14);.
+class Font(font.MonoFont):
+    def __init__(self) -> None:
+        super().__init__(
+            name="ClassWiz CW",
+            w=11, h=14
+        )
 
     c21 = bytes([
         0b00001100,0b000_00000,
@@ -244,7 +248,7 @@ class Font from font.MonoFont
         0b00000000,0b000_00000,
     ])
 
-    === 0
+    # 0
     c30 = bytes([
         0b00111111,0b000_00000,
         0b01111111,0b100_00000,
@@ -518,7 +522,7 @@ class Font from font.MonoFont
         0b00000000,0b000_00000,
     ])
 
-    === A
+    # A
     c41 = bytes([
         0b00001110,0b000_00000,
         0b00001110,0b000_00000,
@@ -1034,7 +1038,7 @@ class Font from font.MonoFont
         0b00000000,0b000_00000,
     ])
 
-    === a
+    # a
     c61 = bytes([
         0b00000000,0b000_00000,
         0b00000000,0b000_00000,
@@ -1606,4 +1610,3 @@ class Font from font.MonoFont
         0b00000000,0b000_00000,
         0b00000000,0b000_00000,
     ])
-.
