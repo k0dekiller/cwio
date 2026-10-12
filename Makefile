@@ -1,5 +1,5 @@
-# Location of top-level MicroPython directory
-MPY_DIR = ../../micropython
+# Location of MicroPython directory
+MPY_DIR = micropython
 
 # Name of module
 MOD = raw_screen
